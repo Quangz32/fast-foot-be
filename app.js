@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const connectDB = require("./config/db");
+const authRoutes = require("./routes/authRoutes");
+const { authMiddleware } = require("./middleware/auth");
 
 // Cấu hình middleware
 app.use(express.json());
@@ -20,8 +22,7 @@ app.use((req, res, next) => {
   if (req.url.startsWith("/api/auth") || req.url.startsWith("/uploads")) {
     next();
   } else {
-    next(); //tạm thời
-    // authMiddleware(req, res, next);
+    authMiddleware(req, res, next);
   }
 });
 
@@ -29,5 +30,8 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
   res.send("Hello World!");
 });
+
+// Auth routes
+app.use("/api/auth", authRoutes);
 
 module.exports = app; // Xuất app để sử dụng trong server.js
