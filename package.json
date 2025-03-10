@@ -1,7 +1,7 @@
 {
   "name": "back-end",
   "version": "1.0.0",
-  "description": "RESTFul API Application - Given",
+  "description": "FastFoot - Food order application",
   "main": "server.js",
   "scripts": {
     "start": "nodemon server"

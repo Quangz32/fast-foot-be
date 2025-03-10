@@ -1,14 +1,11 @@
-const express = require('express');
-const app = express();
+const app = require("./app"); // Nhập app từ app.js
+const connectDB = require("./config/db"); // Nhập hàm connectDB từ db.js
+const PORT = process.env.PORT || 404; // Cổng mặc định
 
-app.get('/', async(req, res)=>{
-    try {
-        res.send({message: 'Welcome to Practical Exam!'});
-    } catch (error) {
-        res.send({error: error.message});
-    }
+// Kết nối đến cơ sở dữ liệu
+connectDB();
+
+// Khởi động server
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
-
-
-const PORT = process.env.PORT || 9999;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
