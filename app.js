@@ -5,6 +5,8 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const { authMiddleware } = require("./middleware/auth");
 const shopRoutes = require("./routes/shopRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
+const foodRoutes = require("./routes/foodRoutes");
 
 // Cấu hình middleware
 app.use(express.json());
@@ -40,5 +42,11 @@ app.use("/uploads", express.static("uploads"));
 
 // Shop routes
 app.use("/api/shops", shopRoutes);
+
+// Category routes
+app.use("/api/categories", categoryRoutes);
+
+// Food routes (now separate from shop routes)
+app.use("/api/shops", foodRoutes);
 
 module.exports = app; // Xuất app để sử dụng trong server.js
