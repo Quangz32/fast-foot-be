@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const Shop = require("../models/Shop");
 
 const authMiddleware = (req, res, next) => {
   try {
@@ -30,4 +31,39 @@ const refreshMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = { authMiddleware, refreshMiddleware };
+// Middleware kiểm tra role admin
+const isAdmin = (req, res, next) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Requires admin privileges" });
+  }
+  next();
+};
+
+// Middleware kiểm tra quyền shop owner
+const isShopOwner = async (req, res, next) => {
+  try {
+    const shop = await Shop.findById(req.params.shopId);
+    if (!shop) {
+      return res.status(404).json({ message: "Shop not found" });
+    }
+
+    if (
+      req.user.role === "admin" ||
+      shop.userId.toString() === req.user.userId
+    ) {
+      req.shop = shop; // Lưu shop vào request để sử dụng sau
+      next();
+    } else {
+      res.status(403).json({ message: "Not authorized" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = {
+  authMiddleware,
+  refreshMiddleware,
+  isAdmin,
+  isShopOwner,
+};

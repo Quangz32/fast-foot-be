@@ -4,6 +4,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const { authMiddleware } = require("./middleware/auth");
+const shopRoutes = require("./routes/shopRoutes");
 
 // Cấu hình middleware
 app.use(express.json());
@@ -33,5 +34,11 @@ app.get("/", (req, res) => {
 
 // Auth routes
 app.use("/api/auth", authRoutes);
+
+// Serve static files từ thư mục uploads
+app.use("/uploads", express.static("uploads"));
+
+// Shop routes
+app.use("/api/shops", shopRoutes);
 
 module.exports = app; // Xuất app để sử dụng trong server.js
