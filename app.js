@@ -47,6 +47,6 @@ app.use("/api/shops", shopRoutes);
 app.use("/api/categories", categoryRoutes);
 
 // Food routes (now separate from shop routes)
-app.use("/api/shops", foodRoutes);
+app.use("/api", foodRoutes);
 
 module.exports = app; // Xuất app để sử dụng trong server.js

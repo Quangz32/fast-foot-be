@@ -4,16 +4,25 @@ const { isShopOwner } = require("../middleware/auth");
 const upload = require("../middleware/upload");
 const {
   createFood,
-  getFoods,
-  getFood,
+  getFoodByQuery,
+  getAllFoodByShop,
+  getFoodByShop,
   updateFood,
   deleteFood,
 } = require("../controllers/foodController");
 
 // Food routes (all require shop authentication)
-router.post("/:shopId/foods", isShopOwner, upload.single("image"), createFood);
-router.get("/:shopId/foods", getFoods);
-router.get("/:shopId/foods/:foodId", getFood);
+router.post(
+  "/shops/:shopId/foods",
+  isShopOwner,
+  upload.single("image"),
+  createFood
+);
+
+router.get("/foods", getFoodByQuery);
+router.get("/shops/:shopId/foods", getAllFoodByShop);
+router.get("/shops/:shopId/foods/:foodId", getFoodByShop);
+
 router.put(
   "/:shopId/foods/:foodId",
   isShopOwner,

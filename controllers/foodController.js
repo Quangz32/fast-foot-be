@@ -19,6 +19,7 @@ const createFood = async (req, res) => {
       description,
       price,
       category: categoryId, // Using categoryId instead of category object
+      rating: 0,
       image: req.file ? `/uploads/${req.file.filename}` : undefined,
     });
 
@@ -32,8 +33,42 @@ const createFood = async (req, res) => {
   }
 };
 
+const getFoodByQuery = async (req, res) => {
+  try {
+    let { name, shopId, categoryId, minPrice, maxPrice, sortBy } = req.query;
+    if (!minPrice) minPrice = 0;
+    if (!maxPrice) maxPrice = Infinity;
+
+    //Sort
+    // Xác định cách sắp xếp
+    let sortOptions = {};
+    if (sortBy) {
+      const sortFields = sortBy.split(","); // Ví dụ: "price,-rating"
+      sortFields.forEach((field) => {
+        const direction = field.startsWith("-") ? -1 : 1; // -1 cho giảm dần, 1 cho tăng dần
+        const fieldName = field.replace("-", ""); // Loại bỏ dấu '-' nếu có
+        sortOptions[fieldName] = direction;
+      });
+    }
+
+    const foods = await Food.find({
+      name: { $regex: new RegExp(name, "i") },
+      category: categoryId ? { $eq: categoryId } : { $exists: true },
+      shopId: shopId ? { $eq: shopId } : { $exists: true },
+      price: { $gte: minPrice, $lte: maxPrice },
+    })
+      .populate("category", "name description")
+      .populate("shopId")
+      .sort(sortOptions)
+      .exec();
+    res.json(foods);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Get all foods for a shop
-const getFoods = async (req, res) => {
+const getAllFoodByShop = async (req, res) => {
   try {
     const foods = await Food.find({ shopId: req.params.shopId })
       .populate("category", "name description")
@@ -45,12 +80,14 @@ const getFoods = async (req, res) => {
 };
 
 // Get a single food item
-const getFood = async (req, res) => {
+const getFoodByShop = async (req, res) => {
   try {
     const food = await Food.findOne({
       shopId: req.params.shopId,
       _id: req.params.foodId,
-    }).populate("category", "name description");
+    })
+      .populate("category", "name description")
+      .populate("shopId", req.params.shopId);
 
     if (!food) {
       return res.status(404).json({ message: "Food not found" });
@@ -129,8 +166,9 @@ const deleteFood = async (req, res) => {
 
 module.exports = {
   createFood,
-  getFoods,
-  getFood,
+  getFoodByQuery,
+  getAllFoodByShop,
+  getFoodByShop,
   updateFood,
   deleteFood,
 };
