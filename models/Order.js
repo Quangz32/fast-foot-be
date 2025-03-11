@@ -19,6 +19,12 @@ const orderSchema = new mongoose.Schema(
           ref: "Food",
           required: true,
         },
+        options: [
+          {
+            name: { type: String },
+            value: { type: String },
+          },
+        ],
         quantity: { type: Number, required: true },
         price: { type: Number, required: true }, // Price at the time of order
       },
@@ -26,13 +32,14 @@ const orderSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["pending", "preparing", "delivering", "completed"],
-      default: "pending",
+      enum: ["creating", "pending", "preparing", "delivering", "completed"],
+      default: "creating",
     },
     paymentMethod: {
       type: String,
       enum: ["credit_card", "e_wallet", "cash"],
       required: true,
+      default: "cash",
     },
     deliveryAddress: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },

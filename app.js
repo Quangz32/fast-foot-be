@@ -7,6 +7,7 @@ const { authMiddleware } = require("./middleware/auth");
 const shopRoutes = require("./routes/shopRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const foodRoutes = require("./routes/foodRoutes");
+const orderRoutes = require("./routes/orderRoutes");
 
 // Cấu hình middleware
 app.use(express.json());
@@ -47,6 +48,9 @@ app.use("/api/shops", shopRoutes);
 app.use("/api/categories", categoryRoutes);
 
 // Food routes (now separate from shop routes)
-app.use("/api", foodRoutes);
+app.use("/api/foods", foodRoutes);
+
+//
+app.use("/api/orders", orderRoutes);
 
 module.exports = app; // Xuất app để sử dụng trong server.js
