@@ -8,6 +8,7 @@ const shopRoutes = require("./routes/shopRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
 const foodRoutes = require("./routes/foodRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const userRoutes = require("./routes/userRoutes");
 
 // Cấu hình middleware
 app.use(express.json());
@@ -35,22 +36,13 @@ app.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-// Auth routes
 app.use("/api/auth", authRoutes);
-
 // Serve static files từ thư mục uploads
 app.use("/uploads", express.static("uploads"));
-
-// Shop routes
 app.use("/api/shops", shopRoutes);
-
-// Category routes
 app.use("/api/categories", categoryRoutes);
-
-// Food routes (now separate from shop routes)
 app.use("/api/foods", foodRoutes);
-
-//
 app.use("/api/orders", orderRoutes);
+app.use("/api/users", userRoutes);
 
 module.exports = app; // Xuất app để sử dụng trong server.js

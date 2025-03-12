@@ -39,7 +39,7 @@ const isAdmin = (req, res, next) => {
   next();
 };
 
-// Middleware kiểm tra quyền shop owner
+// Middleware kiểm tra quyền shop owner (hoặc Admin)
 const isShopOwner = async (req, res, next) => {
   try {
     const shop = await Shop.findById(req.params.shopId);
@@ -47,10 +47,7 @@ const isShopOwner = async (req, res, next) => {
       return res.status(404).json({ message: "Shop not found" });
     }
 
-    if (
-      req.user.role === "admin" ||
-      shop.userId.toString() === req.user.userId
-    ) {
+    if (req.user.role === "admin" || shop.userId.toString() === req.user.userId) {
       req.shop = shop; // Lưu shop vào request để sử dụng sau
       next();
     } else {
