@@ -1,6 +1,7 @@
 const Order = require("../models/Order");
 const Food = require("../models/Food");
 const User = require("../models/User");
+const Review = require("../models/Review");
 
 //Hàm so sánh options (của food)
 
@@ -12,6 +13,19 @@ const cleanFoodOptions = (options) => {
 };
 const isEqualOptions = (opt1, opt2) => {
   return JSON.stringify(cleanFoodOptions(opt1)) === JSON.stringify(cleanFoodOptions(opt2));
+};
+
+const createReviewsForOrder = async (order) => {
+  const foodIdsDuplicate = order.items.map((item) => item.foodId.toString());
+  const foodIds = [...new Set(foodIdsDuplicate)];
+
+  foodIds.forEach((foodId) => {
+    const review = new Review({
+      orderId: order._id,
+      foodId: foodId,
+      reviewed: false,
+    }).save();
+  });
 };
 
 //Thêm sản phẩm vào Order (Giỏ hàng), quantity có thể âm (bớt sản phẩm)
@@ -225,6 +239,10 @@ const updateOrderStatusByCustomer = async (req, res) => {
       };
     }
     await order.save();
+    if (order.status == "received") {
+      createReviewsForOrder(order);
+      // Send notification to shop
+    }
     res.json({ message: "Order status updated successfully", order: order });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });

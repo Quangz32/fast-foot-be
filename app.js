@@ -9,6 +9,7 @@ const categoryRoutes = require("./routes/categoryRoutes");
 const foodRoutes = require("./routes/foodRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const userRoutes = require("./routes/userRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 
 // Cấu hình middleware
 app.use(express.json());
@@ -44,5 +45,6 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/foods", foodRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 module.exports = app; // Xuất app để sử dụng trong server.js

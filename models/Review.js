@@ -2,9 +2,9 @@ const mongoose = require("mongoose");
 
 const reviewSchema = new mongoose.Schema(
   {
-    customerId: {
+    orderId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Order",
       required: true,
     },
     foodId: {
@@ -12,7 +12,8 @@ const reviewSchema = new mongoose.Schema(
       ref: "Food",
       required: true,
     },
-    rating: { type: Number, required: true, min: 1, max: 5 },
+    rating: { type: Number, required: true, min: 1, max: 5, default: 5 },
+    reviewed: { type: Boolean, required: true, default: false },
     comment: { type: String },
     createdAt: { type: Date, default: Date.now },
   },
