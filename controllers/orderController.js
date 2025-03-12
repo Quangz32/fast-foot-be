@@ -161,56 +161,71 @@ const updateOrder = async (req, res) => {
   }
 };
 
-const placeOrder = async (req, res) => {
+const updateOrderStatusByShop = async (req, res) => {
   try {
     console.log(req.user);
+    const { status, reason } = req.body;
+
     const order = await Order.findById(req.params.orderId);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+    console.log(order.shopId);
 
-    if (order.customerId != req.user.userId) {
-      return res.status(403).json({ message: "Unauthorized to place this order" });
+    if (order.shopId.toString() !== req.user.shopId) {
+      return res.status(403).json({ message: "Unauthorized to update this order" });
     }
 
-    if (order.status !== "creating") {
-      return res.status(400).json({ message: "Cannot place a placed / cancelled order" });
+    if (!["preparing", "delivering", "delivered", "cancelled"].includes(status)) {
+      return res.status(403).json({ message: "invalid status to update" });
     }
 
-    res.json({ message: "Order placed successfully", order: order });
+    order.status = status;
+    if (status == "cancelled") {
+      order.cancellation = {
+        cancelledBy: "shop",
+        customerId: null,
+        shopId: req.user.shopId,
+        reason: reason || "",
+        cancelledAt: new Date(),
+      };
+    }
+    await order.save();
+    res.json({ message: "Order status updated successfully", order: order });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-const cancelOrder = async (req, res) => {
+const updateOrderStatusByCustomer = async (req, res) => {
   try {
     console.log(req.user);
+    const { status, reason } = req.body;
+
     const order = await Order.findById(req.params.orderId);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-    console.log(order);
-
-    const isCustomerCancelling = order.customerId.toString() === req.user.userId;
-    if (!isCustomerCancelling && order.shopId.toString() !== req.user.shopId) {
-      return res.status(403).json({ message: "Unauthorized to cancel this order" });
+    if (order.customerId.toString() != req.user.userId) {
+      return res.status(403).json({ message: "Unauthorized to update this order" });
     }
 
-    if (order.status === "cancelled") {
-      return res.status(400).json({ message: "Cannot cancel an already cancelled order" });
+    if (!["placed", "received", "cancelled"].includes(status)) {
+      return res.status(403).json({ message: "invalid status to update" });
     }
 
-    order.status = "cancelled";
-    order.cancellation = {
-      cancelledBy: isCustomerCancelling ? "customer" : "shop",
-      customerId: isCustomerCancelling ? req.user.userId : null,
-      shopId: isCustomerCancelling ? null : req.user.shopId,
-      reason: req.body.reason || "",
-      cancelledAt: new Date(),
-    };
+    order.status = status;
+    if (status == "cancelled") {
+      order.cancellation = {
+        cancelledBy: "customer",
+        customerId: req.user.userId,
+        shopId: null,
+        reason: req.body.reason || "",
+        cancelledAt: new Date(),
+      };
+    }
     await order.save();
-    res.json({ message: "Order cancelled successfully", order: order });
+    res.json({ message: "Order status updated successfully", order: order });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -220,6 +235,6 @@ module.exports = {
   addOrderItem,
   deleteOrderItem,
   updateOrder,
-  placeOrder,
-  cancelOrder,
+  updateOrderStatusByShop,
+  updateOrderStatusByCustomer,
 };
