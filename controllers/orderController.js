@@ -135,6 +135,7 @@ const deleteOrderItem = async (req, res) => {
   }
 };
 
+// Order owner update note, payment method and delivery address
 const updateOrder = async (req, res) => {
   try {
     const order = await Order.findById(req.params.orderId);
@@ -142,28 +143,15 @@ const updateOrder = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    const user = await User.findById(req.params.userId);
-
-    const isOrderOwner = order.customerId.toString() === user.userId;
-    const isAdmin = user.role === "admin";
-    const isShopOwner = order.shopId.toString() === user.shopId.toString();
-
-    if (!isAdmin && !isOrderOwner && !isShopOwner) {
+    if (order.customerId != req.user.userId) {
       return res.status(403).json({ message: "Unauthorized to update this order" });
     }
 
-    const { status, note, paymentMethod, deliveryAddress } = req.body;
-    if (
-      order.status === "canceled" ||
-      (isOrderOwner && !["canceled", "pending"].includes(order.status)) ||
-      (isShopOwner && order.status === "pending")
-    ) {
-      return res.status(400).json({ message: "invalid status" });
-    }
+    const { note, paymentMethod, deliveryAddress } = req.body;
 
     const updatedOrder = await Order.findByIdAndUpdate(
       req.params.orderId,
-      { status, note, paymentMethod, deliveryAddress },
+      { note, paymentMethod, deliveryAddress },
       { new: true, runValidators: true }
     );
 
@@ -173,8 +161,65 @@ const updateOrder = async (req, res) => {
   }
 };
 
+const placeOrder = async (req, res) => {
+  try {
+    console.log(req.user);
+    const order = await Order.findById(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.customerId != req.user.userId) {
+      return res.status(403).json({ message: "Unauthorized to place this order" });
+    }
+
+    if (order.status !== "creating") {
+      return res.status(400).json({ message: "Cannot place a placed / cancelled order" });
+    }
+
+    res.json({ message: "Order placed successfully", order: order });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const cancelOrder = async (req, res) => {
+  try {
+    console.log(req.user);
+    const order = await Order.findById(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    console.log(order);
+
+    const isCustomerCancelling = order.customerId.toString() === req.user.userId;
+    if (!isCustomerCancelling && order.shopId.toString() !== req.user.shopId) {
+      return res.status(403).json({ message: "Unauthorized to cancel this order" });
+    }
+
+    if (order.status === "cancelled") {
+      return res.status(400).json({ message: "Cannot cancel an already cancelled order" });
+    }
+
+    order.status = "cancelled";
+    order.cancellation = {
+      cancelledBy: isCustomerCancelling ? "customer" : "shop",
+      customerId: isCustomerCancelling ? req.user.userId : null,
+      shopId: isCustomerCancelling ? null : req.user.shopId,
+      reason: req.body.reason || "",
+      cancelledAt: new Date(),
+    };
+    await order.save();
+    res.json({ message: "Order cancelled successfully", order: order });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   addOrderItem,
   deleteOrderItem,
   updateOrder,
+  placeOrder,
+  cancelOrder,
 };

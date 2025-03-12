@@ -32,8 +32,15 @@ const orderSchema = new mongoose.Schema(
     totalAmount: { type: Number, required: true },
     status: {
       type: String,
-      enum: ["creating", "pending", "preparing", "delivering", "completed", "canceled"],
+      enum: ["creating", "pending", "preparing", "delivering", "completed", "cancelled"],
       default: "creating",
+    },
+    cancellation: {
+      cancelledBy: { type: String, enum: ["shop", "customer"] },
+      customerId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      shopId: { type: mongoose.Schema.Types.ObjectId, ref: "Shop" },
+      reason: { type: String },
+      cancelledAt: { type: Date },
     },
     paymentMethod: {
       type: String,

@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 // Tạo access token
 const generateAccessToken = (user) => {
   return jwt.sign(
-    { userId: user._id, role: user.role },
+    { userId: user._id, role: user.role, shopId: user.shopId },
     process.env.JWT_SECRET,
     { expiresIn: "1h" }
   );
@@ -13,11 +13,9 @@ const generateAccessToken = (user) => {
 
 // Tạo refresh token
 const generateRefreshToken = (user) => {
-  return jwt.sign(
-    { userId: user._id, role: user.role },
-    process.env.REFRESH_TOKEN_SECRET,
-    { expiresIn: "7d" }
-  );
+  return jwt.sign({ userId: user._id, role: user.role }, process.env.REFRESH_TOKEN_SECRET, {
+    expiresIn: "7d",
+  });
 };
 
 // Đăng ký tài khoản
