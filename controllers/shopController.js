@@ -26,10 +26,14 @@ const registerShop = async (req, res) => {
       },
     });
 
-    await shop.save();
+    const savedShop = await shop.save();
 
     // Cập nhật role của user thành shop
-    await User.findByIdAndUpdate(userId, { role: "shop" });
+    const user = await User.findById(userId);
+    user.role = "shop";
+    user.shopId = savedShop._id;
+    user.save();
+    // await User.findByIdAndUpdate(userId, { role: "shop" });
 
     res.status(201).json({
       message: "Shop registered successfully",

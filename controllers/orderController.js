@@ -11,10 +11,7 @@ const cleanFoodOptions = (options) => {
   }));
 };
 const isEqualOptions = (opt1, opt2) => {
-  return (
-    JSON.stringify(cleanFoodOptions(opt1)) ===
-    JSON.stringify(cleanFoodOptions(opt2))
-  );
+  return JSON.stringify(cleanFoodOptions(opt1)) === JSON.stringify(cleanFoodOptions(opt2));
 };
 
 //Thêm sản phẩm vào Order (Giỏ hàng), quantity có thể âm (bớt sản phẩm)
@@ -116,8 +113,7 @@ const deleteOrderItem = async (req, res) => {
     }
     if (order.status != "creating") {
       return res.status(400).json({
-        message:
-          "Cannot remove items from an order that is not in creating state",
+        message: "Cannot remove items from an order that is not in creating state",
       });
     }
 
@@ -139,7 +135,46 @@ const deleteOrderItem = async (req, res) => {
   }
 };
 
+const updateOrder = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    const user = await User.findById(req.params.userId);
+
+    const isOrderOwner = order.customerId.toString() === user.userId;
+    const isAdmin = user.role === "admin";
+    const isShopOwner = order.shopId.toString() === user.shopId.toString();
+
+    if (!isAdmin && !isOrderOwner && !isShopOwner) {
+      return res.status(403).json({ message: "Unauthorized to update this order" });
+    }
+
+    const { status, note, paymentMethod, deliveryAddress } = req.body;
+    if (
+      order.status === "canceled" ||
+      (isOrderOwner && !["canceled", "pending"].includes(order.status)) ||
+      (isShopOwner && order.status === "pending")
+    ) {
+      return res.status(400).json({ message: "invalid status" });
+    }
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      req.params.orderId,
+      { status, note, paymentMethod, deliveryAddress },
+      { new: true, runValidators: true }
+    );
+
+    res.json({ message: "Order updated successfully", order: updatedOrder });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   addOrderItem,
   deleteOrderItem,
+  updateOrder,
 };
