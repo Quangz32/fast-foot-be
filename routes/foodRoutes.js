@@ -6,24 +6,36 @@ const {
   createFood,
   getFoodByQuery,
   getAllFoodByShop,
-  getFoodByShop,
+  getFoodById,
   updateFood,
   deleteFood,
 } = require("../controllers/foodController");
 
 // Food routes (all require shop authentication)
-router.post("/shops/:shopId", isShopOwner, upload.single("image"), createFood);
+router.post("/", isShopOwner, upload.single("image"), createFood);
 
 router.get("/", getFoodByQuery);
 router.get("/shops/:shopId", getAllFoodByShop);
-router.get("/shops/:shopId/foods/:foodId", getFoodByShop);
+router.get("/:foodId", getFoodById);
 
-router.put(
-  "shops/:shopId/foods/:foodId",
-  isShopOwner,
-  upload.single("image"),
-  updateFood
-);
-router.delete("shops/:shopId/foods/:foodId", isShopOwner, deleteFood);
+router.put("/:foodId", isShopOwner, upload.single("image"), updateFood);
+router.delete("/:foodId", isShopOwner, deleteFood);
 
 module.exports = router;
+
+// [
+//   {
+//     name: "size",
+//     value: [
+//       { name: "XL", priceDiff: 100000 },
+//       { name: "L", priceDiff: 0 },
+//     ],
+//   },
+//   {
+//     name: "color",
+//     value: [
+//       { name: "orange", priceDiff: 3000 },
+//       { name: "green", priceDiff: 4000 },
+//     ],
+//   },
+// ];

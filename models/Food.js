@@ -20,7 +20,7 @@ const foodSchema = new mongoose.Schema(
     options: [
       {
         name: { type: String },
-        values: [{ type: String }],
+        values: [{ name: String, priceDiff: Number }],
       },
     ],
     availability: { type: Boolean, default: true },

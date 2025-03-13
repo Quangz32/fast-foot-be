@@ -4,8 +4,11 @@ const Category = require("../models/Category");
 // Create a new food item
 const createFood = async (req, res) => {
   try {
-    const { name, description, price, categoryId } = req.body;
-    const shopId = req.params.shopId;
+    const { name, description, optionsJSON, price, categoryId } = req.body;
+    console.log(optionsJSON);
+    const options = JSON.parse(optionsJSON);
+    console.log(JSON.stringify(options));
+    const shopId = req.shop._id;
 
     // Verify that the category exists
     const category = await Category.findById(categoryId);
@@ -18,6 +21,7 @@ const createFood = async (req, res) => {
       name,
       description,
       price,
+      options,
       category: categoryId, // Using categoryId instead of category object
       rating: 0,
       image: req.file ? `/uploads/${req.file.filename}` : undefined,
@@ -80,14 +84,11 @@ const getAllFoodByShop = async (req, res) => {
 };
 
 // Get a single food item
-const getFoodByShop = async (req, res) => {
+const getFoodById = async (req, res) => {
   try {
-    const food = await Food.findOne({
-      shopId: req.params.shopId,
-      _id: req.params.foodId,
-    })
+    const food = await Food.findById(req.params.foodId)
       .populate("category", "name description")
-      .populate("shopId", req.params.shopId);
+      .populate("shopId", "shopName rating location");
 
     if (!food) {
       return res.status(404).json({ message: "Food not found" });
@@ -102,7 +103,8 @@ const getFoodByShop = async (req, res) => {
 // Update a food item
 const updateFood = async (req, res) => {
   try {
-    const { name, description, price, categoryId } = req.body;
+    const { name, description, optionsJSON, price, categoryId } = req.body;
+    const options = optionsJSON ? JSON.parse(optionsJSON) : null;
 
     // Verify that the category exists if categoryId is provided
     if (categoryId) {
@@ -116,6 +118,7 @@ const updateFood = async (req, res) => {
       name,
       description,
       price,
+      options,
       ...(categoryId && { category: categoryId }),
     };
 
@@ -124,22 +127,22 @@ const updateFood = async (req, res) => {
       update.image = `/uploads/${req.file.filename}`;
     }
 
-    const food = await Food.findOneAndUpdate(
-      {
-        shopId: req.params.shopId,
-        _id: req.params.foodId,
-      },
-      update,
-      { new: true }
-    ).populate("category", "name description");
-
+    const food = await Food.findById(req.params.foodId);
     if (!food) {
       return res.status(404).json({ message: "Food not found" });
     }
 
+    if (req.user.role !== "admin" && food.shopId.toString() !== req.shop._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const updatedFood = await Food.findByIdAndUpdate({ _id: food._id }, update, {
+      new: true,
+    });
+
     res.json({
       message: "Food updated successfully",
-      food,
+      updatedFood,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -149,15 +152,17 @@ const updateFood = async (req, res) => {
 // Delete a food item
 const deleteFood = async (req, res) => {
   try {
-    const food = await Food.findOneAndDelete({
-      shopId: req.params.shopId,
-      _id: req.params.foodId,
-    });
+    const food = await Food.findById(req.params.foodId);
 
     if (!food) {
       return res.status(404).json({ message: "Food not found" });
     }
 
+    if (req.user.role !== "admin" && food.shopId.toString() !== req.shop._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    await Food.deleteOne({ _id: req.params.foodId });
     res.json({ message: "Food deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -168,7 +173,7 @@ module.exports = {
   createFood,
   getFoodByQuery,
   getAllFoodByShop,
-  getFoodByShop,
+  getFoodById,
   updateFood,
   deleteFood,
 };
