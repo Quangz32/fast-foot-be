@@ -8,10 +8,9 @@ const userSchema = new mongoose.Schema(
     shopId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Shop",
-      required: true,
       default: null, // Shop owner will set this field when creating a shop account.
     },
-    phone: { type: String, required: true },
+    phone: { type: String, required: true, unique: true },
     role: { type: String, enum: ["customer", "shop", "admin"], required: true },
     address: { type: String },
     createdAt: { type: Date, default: Date.now },

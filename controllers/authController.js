@@ -29,6 +29,12 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "Email already exists" });
     }
 
+    // Kiểm tra phone đã tồn tại
+    const existingUserByPhone = await User.findOne({ phone });
+    if (existingUserByPhone) {
+      return res.status(400).json({ message: "Phone already exists" });
+    }
+
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -62,10 +68,10 @@ const register = async (req, res) => {
 // Đăng nhập
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, phone } = req.body;
 
     // Kiểm tra user tồn tại
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ $or: [{ email }, { phone }] });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }

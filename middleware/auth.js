@@ -45,7 +45,7 @@ const isShopOwner = async (req, res, next) => {
     if (req.user.role === "admin") {
       return next();
     }
-    const shop = await Shop.findById(req.user.shopId);
+    const shop = await Shop.findOne({ userId: req.user.userId });
     if (!shop) {
       return res.status(404).json({ message: "Shop not found" });
     }

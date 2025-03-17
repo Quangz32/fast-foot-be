@@ -80,7 +80,6 @@ const addOrderItem = async (req, res) => {
       let edited = false;
 
       for (let i = 0; i < existingOrder.items.length; i++) {
-        console.log(existingOrder.items[i]);
         item = existingOrder.items[i];
 
         if (item?.foodId.toString() === foodId) {
@@ -177,14 +176,12 @@ const updateOrder = async (req, res) => {
 
 const updateOrderStatusByShop = async (req, res) => {
   try {
-    console.log(req.user);
     const { status, reason } = req.body;
 
     const order = await Order.findById(req.params.orderId);
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
-    console.log(order.shopId);
 
     if (order.shopId.toString() !== req.user.shopId) {
       return res.status(403).json({ message: "Unauthorized to update this order" });
