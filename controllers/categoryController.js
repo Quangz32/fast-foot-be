@@ -8,6 +8,7 @@ const createCategory = async (req, res) => {
     const category = new Category({
       name,
       description,
+      image: req.file ? `/uploads/${req.file.filename}` : undefined,
     });
 
     await category.save();

@@ -7,6 +7,7 @@ const {
   getFoodByQuery,
   getAllFoodByShop,
   getFoodById,
+  getTopSellingFoods,
   updateFood,
   deleteFood,
 } = require("../controllers/foodController");
@@ -16,6 +17,7 @@ router.post("/", isShopOwner, upload.single("image"), createFood);
 
 router.get("/", getFoodByQuery);
 router.get("/shops/:shopId", getAllFoodByShop);
+router.get("/top-selling", getTopSellingFoods);
 router.get("/:foodId", getFoodById);
 
 router.put("/:foodId", isShopOwner, upload.single("image"), updateFood);

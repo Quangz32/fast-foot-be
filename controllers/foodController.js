@@ -1,10 +1,11 @@
 const Food = require("../models/Food");
 const Category = require("../models/Category");
+const Order = require("../models/Order");
 
 // Create a new food item
 const createFood = async (req, res) => {
   try {
-    const { name, description, optionsJSON, price, categoryId } = req.body;
+    const { name, description, optionsJSON, originalPrice, price, categoryId } = req.body;
     console.log(optionsJSON);
     const options = JSON.parse(optionsJSON);
     console.log(JSON.stringify(options));
@@ -20,6 +21,7 @@ const createFood = async (req, res) => {
       shopId,
       name,
       description,
+      originalPrice,
       price,
       options,
       category: categoryId, // Using categoryId instead of category object
@@ -100,10 +102,55 @@ const getFoodById = async (req, res) => {
   }
 };
 
+const getTopSellingFoods = async (req, res) => {
+  try {
+    console.log("getTopSellingFoods");
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const topSellingFoods = await Order.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: oneWeekAgo },
+          status: { $ne: "cancelled" },
+        },
+      },
+      { $unwind: "$items" },
+      {
+        $group: {
+          _id: "$items.foodId",
+          totalSold: { $sum: "$items.quantity" },
+        },
+      },
+      { $sort: { totalSold: -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: "foods",
+          localField: "_id",
+          foreignField: "_id",
+          as: "foodDetails",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          totalSold: 1,
+          foodDetails: { $arrayElemAt: ["$foodDetails", 0] },
+        },
+      },
+    ]);
+
+    res.json(topSellingFoods);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Update a food item
 const updateFood = async (req, res) => {
   try {
-    const { name, description, optionsJSON, price, categoryId } = req.body;
+    const { name, description, optionsJSON, originalPrice, price, categoryId } = req.body;
     const options = optionsJSON ? JSON.parse(optionsJSON) : null;
 
     // Verify that the category exists if categoryId is provided
@@ -117,6 +164,7 @@ const updateFood = async (req, res) => {
     const update = {
       name,
       description,
+      originalPrice,
       price,
       options,
       ...(categoryId && { category: categoryId }),
@@ -174,6 +222,7 @@ module.exports = {
   getFoodByQuery,
   getAllFoodByShop,
   getFoodById,
+  getTopSellingFoods,
   updateFood,
   deleteFood,
 };
