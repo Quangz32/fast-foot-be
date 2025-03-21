@@ -104,7 +104,6 @@ const getFoodById = async (req, res) => {
 
 const getTopSellingFoods = async (req, res) => {
   try {
-    console.log("getTopSellingFoods");
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
@@ -126,17 +125,32 @@ const getTopSellingFoods = async (req, res) => {
       { $limit: 10 },
       {
         $lookup: {
-          from: "foods",
+          from: "foods", // Tên collection của món ăn
           localField: "_id",
           foreignField: "_id",
           as: "foodDetails",
         },
       },
       {
+        $unwind: "$foodDetails", // Chuyển đổi từ mảng thành đối tượng
+      },
+      {
+        $lookup: {
+          from: "shops", // Tên collection của cửa hàng
+          localField: "foodDetails.shopId", // Trường shopId trong foodDetails
+          foreignField: "_id",
+          as: "shopDetails",
+        },
+      },
+      {
+        $unwind: "$shopDetails", // Chuyển đổi từ mảng thành đối tượng
+      },
+      {
         $project: {
           _id: 1,
           totalSold: 1,
-          foodDetails: { $arrayElemAt: ["$foodDetails", 0] },
+          foodDetails: 1,
+          shopDetails: { name: "$shopDetails.shopName", location: "$shopDetails.location" }, // Chọn các trường cần thiết
         },
       },
     ]);
@@ -146,6 +160,51 @@ const getTopSellingFoods = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+// const getTopSellingFoods = async (req, res) => {
+//   try {
+//     console.log("getTopSellingFoods");
+//     const oneWeekAgo = new Date();
+//     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+//     const topSellingFoods = await Order.aggregate([
+//       {
+//         $match: {
+//           createdAt: { $gte: oneWeekAgo },
+//           status: { $ne: "cancelled" },
+//         },
+//       },
+//       { $unwind: "$items" },
+//       {
+//         $group: {
+//           _id: "$items.foodId",
+//           totalSold: { $sum: "$items.quantity" },
+//         },
+//       },
+//       { $sort: { totalSold: -1 } },
+//       { $limit: 10 },
+//       {
+//         $lookup: {
+//           from: "foods",
+//           localField: "_id",
+//           foreignField: "_id",
+//           as: "foodDetails",
+//         },
+//       },
+//       {
+//         $project: {
+//           _id: 1,
+//           totalSold: 1,
+//           foodDetails: { $arrayElemAt: ["$foodDetails", 0] },
+//         },
+//       },
+//     ]);
+
+//     res.json(topSellingFoods);
+//   } catch (error) {
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// };
 
 // Update a food item
 const updateFood = async (req, res) => {

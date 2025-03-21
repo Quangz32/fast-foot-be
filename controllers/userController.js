@@ -10,6 +10,19 @@ const getUsers = async (req, res) => {
   }
 };
 
+// Get request's maker
+const getRequestMaker = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).populate("shopId");
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Get a single User by ID
 const getUser = async (req, res) => {
   try {
@@ -54,6 +67,7 @@ const deleteUser = async (req, res) => {
 
 module.exports = {
   getUsers,
+  getRequestMaker,
   getUser,
   updateUser,
   deleteUser,

@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {
+  getMyOrders,
   addOrderItem,
   deleteOrderItem,
   updateOrder,
@@ -8,6 +9,7 @@ const {
   updateOrderStatusByCustomer,
 } = require("../controllers/orderController");
 
+router.get("/", getMyOrders);
 router.post("/items", addOrderItem);
 router.delete("/:orderId/items", deleteOrderItem);
 router.put("/:orderId", updateOrder);

@@ -15,6 +15,19 @@ const isEqualOptions = (opt1, opt2) => {
   return JSON.stringify(cleanFoodOptions(opt1)) === JSON.stringify(cleanFoodOptions(opt2));
 };
 
+const getMyOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ customerId: req.user.userId })
+      .sort({ createdAt: -1 })
+      .populate("shopId", "shopName")
+      .populate("items.foodId", "name price image")
+      .exec();
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const createReviewsForOrder = async (order) => {
   const foodIdsDuplicate = order.items.map((item) => item.foodId.toString());
   const foodIds = [...new Set(foodIdsDuplicate)];
@@ -44,9 +57,34 @@ const addOrderItem = async (req, res) => {
       return res.status(404).json({ message: "Food not found" });
     }
 
+    //Kiểm tra options hợp lệ, và thêm PriceDiff
+    const formatedOptions = [];
+    for (let i = 0; i < options.length; i++) {
+      const option = options[i];
+      const validOption = food.options.find((opt) => opt.name === option.name);
+      console.log(validOption);
+      if (!validOption) {
+        return res.status(400).json({ message: "Invalid options" });
+      }
+
+      const validValue = validOption.values.find((val) => val.name === option.value);
+      if (!validValue) {
+        return res.status(400).json({ message: "Invalid options" });
+      }
+
+      console.log("ValidValue", validValue);
+
+      formatedOptions.push({
+        name: option.name,
+        value: option.value,
+        priceDiff: validValue.priceDiff,
+      });
+      // option = { ...option, priceDiff: validValue.priceDiff };
+    }
+    console.log("formatedOptions", formatedOptions);
     const itemToInsert = {
       foodId: foodId,
-      options: options,
+      options: formatedOptions,
       quantity: quantity,
       price: food.price, //Lấy từ database
     };
@@ -247,6 +285,7 @@ const updateOrderStatusByCustomer = async (req, res) => {
 };
 
 module.exports = {
+  getMyOrders,
   addOrderItem,
   deleteOrderItem,
   updateOrder,

@@ -23,6 +23,7 @@ const orderSchema = new mongoose.Schema(
           {
             name: { type: String },
             value: { type: String },
+            priceDiff: { type: Number },
           },
         ],
         quantity: { type: Number, required: true },
