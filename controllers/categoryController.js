@@ -1,14 +1,24 @@
 const Category = require("../models/Category");
+const { saveBase64Image } = require("../utils/imageUtils");
 
 // Create a new category
 const createCategory = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, imageBase64 } = req.body;
+
+    let imagePath;
+    if (req.file) {
+      // Handle file upload
+      imagePath = `/uploads/${req.file.filename}`;
+    } else if (imageBase64) {
+      // Handle base64 image
+      imagePath = saveBase64Image(imageBase64);
+    }
 
     const category = new Category({
       name,
       description,
-      image: req.file ? `/uploads/${req.file.filename}` : undefined,
+      image: imagePath,
     });
 
     await category.save();
@@ -31,7 +41,7 @@ const getCategories = async (req, res) => {
   }
 };
 
-// Get a single category by ID
+// Get a single category
 const getCategory = async (req, res) => {
   try {
     const category = await Category.findById(req.params.categoryId);
@@ -47,10 +57,26 @@ const getCategory = async (req, res) => {
 // Update a category
 const updateCategory = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, imageBase64 } = req.body;
+
+    let imagePath;
+    if (req.file) {
+      // Handle file upload
+      imagePath = `/uploads/${req.file.filename}`;
+    } else if (imageBase64) {
+      // Handle base64 image
+      imagePath = saveBase64Image(imageBase64);
+    }
+
+    const update = {
+      name,
+      description,
+      ...(imagePath && { image: imagePath }),
+    };
+
     const category = await Category.findByIdAndUpdate(
       req.params.categoryId,
-      { name, description },
+      update,
       { new: true }
     );
 

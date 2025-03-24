@@ -1,11 +1,20 @@
 const Food = require("../models/Food");
 const Category = require("../models/Category");
 const Order = require("../models/Order");
+const { saveBase64Image } = require("../utils/imageUtils");
 
 // Create a new food item
 const createFood = async (req, res) => {
   try {
-    const { name, description, optionsJSON, originalPrice, price, categoryId } = req.body;
+    const {
+      name,
+      description,
+      optionsJSON,
+      originalPrice,
+      price,
+      categoryId,
+      imageBase64,
+    } = req.body;
     console.log(optionsJSON);
     const options = JSON.parse(optionsJSON);
     console.log(JSON.stringify(options));
@@ -17,6 +26,15 @@ const createFood = async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
+    let imagePath;
+    if (req.file) {
+      // Handle file upload
+      imagePath = `/uploads/${req.file.filename}`;
+    } else if (imageBase64) {
+      // Handle base64 image
+      imagePath = saveBase64Image(imageBase64);
+    }
+
     const food = new Food({
       shopId,
       name,
@@ -24,9 +42,9 @@ const createFood = async (req, res) => {
       originalPrice,
       price,
       options,
-      category: categoryId, // Using categoryId instead of category object
+      category: categoryId,
       rating: 0,
-      image: req.file ? `/uploads/${req.file.filename}` : undefined,
+      image: imagePath,
     });
 
     await food.save();
@@ -150,7 +168,10 @@ const getTopSellingFoods = async (req, res) => {
           _id: 1,
           totalSold: 1,
           foodDetails: 1,
-          shopDetails: { shopName: "$shopDetails.shopName", location: "$shopDetails.location" }, // Chọn các trường cần thiết
+          shopDetails: {
+            shopName: "$shopDetails.shopName",
+            location: "$shopDetails.location",
+          }, // Chọn các trường cần thiết
         },
       },
     ]);
@@ -209,7 +230,15 @@ const getTopSellingFoods = async (req, res) => {
 // Update a food item
 const updateFood = async (req, res) => {
   try {
-    const { name, description, optionsJSON, originalPrice, price, categoryId } = req.body;
+    const {
+      name,
+      description,
+      optionsJSON,
+      originalPrice,
+      price,
+      categoryId,
+      imageBase64,
+    } = req.body;
     const options = optionsJSON ? JSON.parse(optionsJSON) : null;
 
     // Verify that the category exists if categoryId is provided
@@ -220,6 +249,15 @@ const updateFood = async (req, res) => {
       }
     }
 
+    let imagePath;
+    if (req.file) {
+      // Handle file upload
+      imagePath = `/uploads/${req.file.filename}`;
+    } else if (imageBase64) {
+      // Handle base64 image
+      imagePath = saveBase64Image(imageBase64);
+    }
+
     const update = {
       name,
       description,
@@ -227,25 +265,28 @@ const updateFood = async (req, res) => {
       price,
       options,
       ...(categoryId && { category: categoryId }),
+      ...(imagePath && { image: imagePath }),
     };
-
-    // Update image if new file is uploaded
-    if (req.file) {
-      update.image = `/uploads/${req.file.filename}`;
-    }
 
     const food = await Food.findById(req.params.foodId);
     if (!food) {
       return res.status(404).json({ message: "Food not found" });
     }
 
-    if (req.user.role !== "admin" && food.shopId.toString() !== req.shop._id.toString()) {
+    if (
+      req.user.role !== "admin" &&
+      food.shopId.toString() !== req.shop._id.toString()
+    ) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
-    const updatedFood = await Food.findByIdAndUpdate({ _id: food._id }, update, {
-      new: true,
-    });
+    const updatedFood = await Food.findByIdAndUpdate(
+      { _id: food._id },
+      update,
+      {
+        new: true,
+      }
+    );
 
     res.json({
       message: "Food updated successfully",
@@ -265,7 +306,10 @@ const deleteFood = async (req, res) => {
       return res.status(404).json({ message: "Food not found" });
     }
 
-    if (req.user.role !== "admin" && food.shopId.toString() !== req.shop._id.toString()) {
+    if (
+      req.user.role !== "admin" &&
+      food.shopId.toString() !== req.shop._id.toString()
+    ) {
       return res.status(403).json({ message: "Not authorized" });
     }
 
