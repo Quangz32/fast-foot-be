@@ -150,7 +150,7 @@ const getTopSellingFoods = async (req, res) => {
           _id: 1,
           totalSold: 1,
           foodDetails: 1,
-          shopDetails: { name: "$shopDetails.shopName", location: "$shopDetails.location" }, // Chọn các trường cần thiết
+          shopDetails: { shopName: "$shopDetails.shopName", location: "$shopDetails.location" }, // Chọn các trường cần thiết
         },
       },
     ]);

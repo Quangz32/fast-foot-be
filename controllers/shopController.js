@@ -8,11 +8,13 @@ const registerShop = async (req, res) => {
     const userId = req.user.userId;
 
     // Kiểm tra user đã có shop chưa
-    const existingShop = await Shop.findOne({ userId });
-    if (existingShop) {
+    // const existingShop = await Shop.findOne({ userId });
+    const user = await User.findById(userId);
+    if (user.role === "shop") {
       return res.status(400).json({ message: "User already has a shop" });
+    } else if (user.role === "admin") {
+      return res.status(400).json({ message: "Admin cannot register a shop" });
     }
-
     // Tạo shop mới
     const shop = new Shop({
       userId,
