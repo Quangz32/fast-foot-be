@@ -12,14 +12,19 @@ const cleanFoodOptions = (options) => {
   }));
 };
 const isEqualOptions = (opt1, opt2) => {
-  return JSON.stringify(cleanFoodOptions(opt1)) === JSON.stringify(cleanFoodOptions(opt2));
+  return (
+    JSON.stringify(cleanFoodOptions(opt1)) ===
+    JSON.stringify(cleanFoodOptions(opt2))
+  );
 };
 
 const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ customerId: req.user.userId })
+    const orders = await Order.find({
+      $or: [{ customerId: req.user.userId }, { shopId: req.user.userId }],
+    })
       .sort({ createdAt: -1 })
-      .populate("shopId", "shopName")
+      .populate("shopId", "shopName userId")
       .populate("items.foodId", "name price image")
       .exec();
     res.json(orders);
@@ -29,16 +34,33 @@ const getMyOrders = async (req, res) => {
 };
 
 const createReviewsForOrder = async (order) => {
-  const foodIdsDuplicate = order.items.map((item) => item.foodId.toString());
-  const foodIds = [...new Set(foodIdsDuplicate)];
+  try {
+    const foodIdsDuplicate = order.items.map((item) => item.foodId.toString());
+    const foodIds = [...new Set(foodIdsDuplicate)];
 
-  foodIds.forEach((foodId) => {
-    const review = new Review({
-      orderId: order._id,
-      foodId: foodId,
-      reviewed: false,
-    }).save();
-  });
+    const reviewPromises = foodIds.map(async (foodId) => {
+      // Check if a review already exists for this order and food
+      const existingReview = await Review.findOne({
+        orderId: order._id,
+        foodId: foodId,
+      });
+
+      if (!existingReview) {
+        // Create new review only if it doesn't exist
+        return new Review({
+          orderId: order._id,
+          foodId: foodId,
+          reviewed: false,
+        }).save();
+      }
+      return existingReview;
+    });
+
+    await Promise.all(reviewPromises);
+    console.log("Reviews created successfully for order:", order._id);
+  } catch (error) {
+    console.error("Error creating reviews for order:", error);
+  }
 };
 
 //Thêm sản phẩm vào Order (Giỏ hàng), quantity có thể âm (bớt sản phẩm)
@@ -67,7 +89,9 @@ const addOrderItem = async (req, res) => {
         return res.status(400).json({ message: "Invalid options" });
       }
 
-      const validValue = validOption.values.find((val) => val.name === option.value);
+      const validValue = validOption.values.find(
+        (val) => val.name === option.value
+      );
       if (!validValue) {
         return res.status(400).json({ message: "Invalid options" });
       }
@@ -164,7 +188,8 @@ const deleteOrderItem = async (req, res) => {
     }
     if (order.status != "creating") {
       return res.status(400).json({
-        message: "Cannot remove items from an order that is not in creating state",
+        message:
+          "Cannot remove items from an order that is not in creating state",
       });
     }
 
@@ -195,7 +220,9 @@ const updateOrder = async (req, res) => {
     }
 
     if (order.customerId != req.user.userId) {
-      return res.status(403).json({ message: "Unauthorized to update this order" });
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to update this order" });
     }
 
     const { note, paymentMethod, deliveryAddress } = req.body;
@@ -222,10 +249,15 @@ const updateOrderStatusByShop = async (req, res) => {
     }
 
     if (order.shopId.toString() !== req.user.shopId) {
-      return res.status(403).json({ message: "Unauthorized to update this order" });
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to update this order" });
     }
 
-    if (!["preparing", "delivering", "delivered", "cancelled"].includes(status)) {
+    console.log(status);
+    if (
+      !["preparing", "delivering", "delivered", "cancelled"].includes(status)
+    ) {
       return res.status(403).json({ message: "invalid status to update" });
     }
 
@@ -256,7 +288,9 @@ const updateOrderStatusByCustomer = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
     if (order.customerId.toString() != req.user.userId) {
-      return res.status(403).json({ message: "Unauthorized to update this order" });
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to update this order" });
     }
 
     if (!["placed", "received", "cancelled"].includes(status)) {
